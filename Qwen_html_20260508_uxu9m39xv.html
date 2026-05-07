@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажёр английских слов</title>
+    <style>
+        :root {
+            --bg-color: #eef2ff;
+            --title-color: #182b4f;
+            --subtitle-color: #5f7397;
+            --white: #ffffff;
+            --shadow: #d8def0;
+            --blue: #2563eb;
+            --green: #08c844;
+            --red: #ff2f3d;
+            --purple: #9b4dff;
+            --bar-blue: #3b82f6;
+            --soft-gray: #e7ecf5;
+            --text-dark: #1a2f55;
+            --text-mute: #6c7f9d;
+            --warning-bg: #fff1b8;
+            --warning-text: #b26a00;
+            --warning-border: #ffb300;
+            --complete-card: #2d6ce8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 1920px;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Typography */
+        h1 { color: var(--title-color); margin: 0; font-size: 31px; font-weight: bold; position: absolute; top: 23px; }
+        h2 { color: var(--subtitle-color); margin: 0; font-size: 15px; font-weight: normal; position: absolute; top: 76px; }
+
+        /* Welcome Screen */
+        #welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .welcome-card {
+            width: 780px;
+            height: 400px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 10px 25px var(--shadow);
+            padding: 40px;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .badge {
+            background: var(--blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 16px;
+            font-weight: bold;
+            align-self: center;
+            margin-bottom: 20px;
+        }
+
+        .welcome-title { font-size: 30px; color: var(--title-color); font-weight: bold; margin-bottom: 10px; }
+        .welcome-subtitle { font-size: 13px; color: var(--subtitle-color); margin-bottom: 20px; line-height: 1.5; }
+        .welcome-body { font-size: 14px; color: var(--text-dark); line-height: 1.6; white-space: pre-line; flex-grow: 1; }
+        .welcome-footer { font-size: 12px; color: var(--purple); font-weight: bold; margin-top: auto; }
+
+        /* Game Screen */
+        #game-screen {
+            display: none; /* Hidden by default */
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Stats */
+        .stats-container {
+            position: absolute;
+            top: 156px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat-card {
+            width: 212px;
+            height: 145px;
+            background: var(--white);
+            border-radius: 18px;
+            box-shadow: 0 8px 0 var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .stat-icon { margin-bottom: 10px; }
+        .stat-value { font-size: 23px; font-weight: bold; color: var(--text-dark); }
+        .stat-label { font-size: 13px; color: var(--text-mute); margin-top: 5px; }
+
+        /* Banner */
+        #repeat-banner {
+            position: absolute;
+            top: 94px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border-left: 5px solid var(--warning-border);
+            font-weight: bold;
+            display: none;
+        }
+
+        /* Flashcard */
+        .flashcard-container {
+            position: absolute;
+            top: 323px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: pointer;
+        }
+
+        .flashcard {
+            width: 690px;
+            height: 336px;
+            background: var(--blue);
+            border-radius: 20px;
+            box-shadow: 0 14px 0 rgba(0,0,0,0.1); /* Simplified shadow for web */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: transform 0.1s;
+        }
+        
+        .flashcard:active { transform: scale(0.98); }
+        .flashcard.complete { background: var(--complete-card); }
+        .flashcard.revealed { background: var(--green); }
+
+        .card-title { font-size: 34px; font-weight: bold; text-align: center; margin-bottom: 10px; }
+        .card-subtitle { font-size: 14px; opacity: 0.9; }
+
+        /* Buttons */
+        .btn-row {
+            position: absolute;
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-row.answers { top: 688px; left: 50%; transform: translateX(-50%); }
+        .btn-row.actions { top: 781px; left: 50%; transform: translateX(-50%); }
+
+        .action-btn {
+            height: 66px;
+            border-radius: 16px;
+            border: none;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+            transition: all 0.1s;
+            font-family: inherit;
+        }
+
+        .action-btn:active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        .action-btn:disabled { background: #b8c2d8 !important; box-shadow: none; cursor: not-allowed; transform: none; opacity: 0.7; }
+
+        .btn-blue { background: var(--blue); width: 340px; }
+        .btn-red { background: var(--red); width: 178px; }
+        .btn-green { background: var(--green); width: 148px; }
+        .btn-purple { background: var(--purple); width: 228px; height: 56px; }
+        .btn-gray { background: var(--soft-gray); color: var(--text-dark); width: 240px; height: 56px; }
+
+        /* Icons (SVG) */
+        svg { width: 20px; height: 20px; fill: currentColor; }
+
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <h1>Тренажёр английских слов</h1>
+    <h2>Система интервальных повторений</h2>
+
+    <!-- Welcome Screen -->
+    <div id="welcome-screen">
+        <div class="welcome-card">
+            <div class="badge">Добро пожаловать</div>
+            <div class="welcome-title">Изучение слов через карточки</div>
+            <div class="welcome-subtitle" id="welcome-desc">
+                При каждом сбросе приложение собирает новую сессию из 15 случайных слов.
+            </div>
+            <div class="welcome-body">
+- Нажмите на карточку, чтобы увидеть перевод.
+- Кнопки "Знаю" и "Не знаю" сразу засчитывают ответ.
+- Сложные слова можно вынести в отдельный повтор.
+- F11 включает полноэкранный режим.
+            </div>
+            <div class="welcome-footer" id="welcome-footer">
+                Новая случайная сессия уже подготовлена. Можно начинать.
+            </div>
+        </div>
+        <div style="height: 40px;"></div>
+        <button class="action-btn btn-blue" onclick="app.startTraining()">
+            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            Приступить к изучению
+        </button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen">
+        <div id="repeat-banner">Слов на повторение: 0</div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" style="color:var(--green)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+                <div class="stat-value" id="stat-correct">0</div>
+                <div class="stat-label">Правильно</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" style="color:var(--red)"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+                <div class="stat-value" id="stat-incorrect">0</div>
+                <div class="stat-label">Неправильно</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" style="color:var(--bar-blue)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg></div>
+                <div class="stat-value" id="stat-accuracy">0%</div>
+                <div class="stat-label">Точность</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><svg viewBox="0 0 24 24" style="color:var(--purple)"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg></div>
+                <div class="stat-value" id="stat-progress">0/0</div>
+                <div class="stat-label">Прогресс</div>
+            </div>
+        </div>
+
+        <div class="flashcard-container" onclick="app.toggleCard()">
+            <div id="flashcard" class="flashcard">
+                <div class="card-title" id="card-title">Apple</div>
+                <div class="card-subtitle" id="card-subtitle">Нажмите для перевода</div>
+            </div>
+        </div>
+
+        <div class="btn-row answers">
+            <button id="btn-unknown" class="action-btn btn-red" onclick="app.answer(false)">
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                Не знаю
+            </button>
+            <button id="btn-known" class="action-btn btn-green" onclick="app.answer(true)">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Знаю
+            </button>
+        </div>
+
+        <div class="btn-row actions">
+            <button id="btn-repeat" class="action-btn btn-purple" onclick="app.repeatWords()">
+                <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                Повторить слова
+            </button>
+            <button class="action-btn btn-gray" onclick="app.resetProgress()">
+                <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                Сбросить прогресс
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- DATA ---
+const WORDS_DB = [
+  {"english": "Apple", "russian": "Яблоко"},
+  {"english": "Book", "russian": "Книга"},
+  {"english": "Table", "russian": "Стол"},
+  {"english": "Water", "russian": "Вода"},
+  {"english": "Sun", "russian": "Солнце"},
+  {"english": "House", "russian": "Дом"},
+  {"english": "School", "russian": "Школа"},
+  {"english": "Friend", "russian": "Друг"},
+  {"english": "Window", "russian": "Окно"},
+  {"english": "Computer", "russian": "Компьютер"},
+  {"english": "River", "russian": "Река"},
+  {"english": "Flower", "russian": "Цветок"},
+  {"english": "Garden", "russian": "Сад"},
+  {"english": "Music", "russian": "Музыка"},
+  {"english": "Mountain", "russian": "Гора"},
+  {"english": "Chair", "russian": "Стул"},
+  {"english": "Door", "russian": "Дверь"},
+  {"english": "City", "russian": "Город"},
+  {"english": "Road", "russian": "Дорога"},
+  {"english": "Bread", "russian": "Хлеб"},
+  {"english": "Milk", "russian": "Молоко"},
+  {"english": "Phone", "russian": "Телефон"},
+  {"english": "Clock", "russian": "Часы"},
+  {"english": "Picture", "russian": "Картина"},
+  {"english": "Street", "russian": "Улица"},
+  {"english": "Market", "russian": "Рынок"},
+  {"english": "Teacher", "russian": "Учитель"},
+  {"english": "Student", "russian": "Студент"},
+  {"english": "Family", "russian": "Семья"},
+  {"english": "Animal", "russian": "Животное"},
+  {"english": "Bird", "russian": "Птица"},
+  {"english": "Dog", "russian": "Собака"},
+  {"english": "Cat", "russian": "Кошка"},
+  {"english": "Forest", "russian": "Лес"},
+  {"english": "Sea", "russian": "Море"},
+  {"english": "Beach", "russian": "Пляж"},
+  {"english": "Sky", "russian": "Небо"},
+  {"english": "Star", "russian": "Звезда"},
+  {"english": "Moon", "russian": "Луна"},
+  {"english": "Rain", "russian": "Дождь"},
+  {"english": "Snow", "russian": "Снег"},
+  {"english": "Wind", "russian": "Ветер"},
+  {"english": "Fire", "russian": "Огонь"},
+  {"english": "Light", "russian": "Свет"},
+  {"english": "Darkness", "russian": "Темнота"},
+  {"english": "Morning", "russian": "Утро"},
+  {"english": "Evening", "russian": "Вечер"},
+  {"english": "Night", "russian": "Ночь"},
+  {"english": "Breakfast", "russian": "Завтрак"},
+  {"english": "Dinner", "russian": "Ужин"},
+  {"english": "Travel", "russian": "Путешествие"},
+  {"english": "Ticket", "russian": "Билет"},
+  {"english": "Train", "russian": "Поезд"},
+  {"english": "Plane", "russian": "Самолет"},
+  {"english": "Station", "russian": "Станция"},
+  {"english": "Shop", "russian": "Магазин"},
+  {"english": "Money", "russian": "Деньги"},
+  {"english": "Work", "russian": "Работа"},
+  {"english": "Holiday", "russian": "Праздник"},
+  {"english": "Game", "russian": "Игра"},
+  {"english": "Dream", "russian": "Мечта"},
+  {"english": "Smile", "russian": "Улыбка"},
+  {"english": "Heart", "russian": "Сердце"},
+  {"english": "Language", "russian": "Язык"},
+  {"english": "Lesson", "russian": "Урок"},
+  {"english": "Question", "russian": "Вопрос"},
+  {"english": "Answer", "russian": "Ответ"},
+  {"english": "Energy", "russian": "Энергия"},
+  {"english": "History", "russian": "История"},
+  {"english": "Future", "russian": "Будущее"},
+  {"english": "Freedom", "russian": "Свобода"},
+  {"english": "Success", "russian": "Успех"},
+  {"english": "Knowledge", "russian": "Знание"}
+];
+
+// --- LOGIC ---
+class TrainerModel {
+    constructor() {
+        this.words = WORDS_DB;
+        this.sessionWordIds = [];
+        this.correct = 0;
+        this.incorrect = 0;
+        this.baseCompleted = 0;
+        this.position = 0;
+        this.failures = new Array(this.words.length).fill(0);
+        this.queue = [];
+        this.loadState();
+    }
+
+    get vocabularySize() { return this.words.length; }
+    get totalWords() { return this.sessionWordIds.length; }
+    get totalAnswers() { return this.correct + this.incorrect; }
+    get accuracy() {
+        if (this.totalAnswers === 0) return 0;
+        return Math.round((this.correct / this.totalAnswers) * 100);
+    }
+    get isComplete() { return this.position >= this.queue.length; }
+    
+    get progressLabel() {
+        if (this.totalWords === 0) return "0/0";
+        if (this.isComplete) return `${this.totalWords}/${this.totalWords}`;
+        const shown = Math.min(this.baseCompleted + 1, this.totalWords);
+        return `${shown}/${this.totalWords}`;
+    }
+
+    get repeatCount() {
+        // Simplified count of unique words pending repeat
+        const pending = this.queue.slice(this.position).filter(t => t.kind === 'repeat');
+        return new Set(pending.map(t => t.word_id)).size;
+    }
+
+    get canRepeatWords() {
+        return this.repeatCount > 0;
+    }
+
+    currentWord() {
+        if (this.isComplete) return null;
+        const taskId = this.queue[this.position].word_id;
+        return this.words[taskId];
+    }
+
+    reset() {
+        this.correct = 0;
+        this.incorrect = 0;
+        this.baseCompleted = 0;
+        this.position = 0;
+        this.failures.fill(0);
+        
+        // Shuffle and pick 15
+        const indices = Array.from({length: this.words.length}, (_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        this.sessionWordIds = indices.slice(0, 15);
+        
+        this.queue = this.sessionWordIds.map(id => ({ word_id: id, kind: 'base' }));
+        this.saveState();
+    }
+
+    answer(known) {
+        if (this.isComplete) return;
+
+        const task = this.queue[this.position];
+        const wordId = task.word_id;
+
+        if (task.kind === 'base') {
+            this.baseCompleted = Math.min(this.totalWords, this.baseCompleted + 1);
+        }
+
+        if (known) {
+            this.correct++;
+            if (this.failures[wordId] > 0) this.failures[wordId]--;
+            if (this.failures[wordId] === 0) {
+                this.removeFutureRepeats(wordId);
+            }
+        } else {
+            this.incorrect++;
+            this.failures[wordId]++;
+            this.scheduleRepeat(wordId);
+        }
+
+        this.position++;
+        this.saveState();
+    }
+
+    scheduleRepeat(wordId) {
+        // Check if already scheduled soon
+        const futureSlice = this.queue.slice(this.position + 1);
+        const pendingSame = futureSlice.filter(t => t.kind === 'repeat' && t.word_id === wordId).length;
+        if (pendingSame >= 2) return;
+
+        const minGap = 2;
+        const maxGap = Math.min(2 + (this.failures[wordId] - 1) * 2, 6);
+        const gap = Math.floor(Math.random() * (maxGap - minGap + 1)) + minGap;
+        
+        const insertAt = Math.min(this.queue.length, this.position + gap + 1);
+        this.queue.splice(insertAt, 0, { word_id: wordId, kind: 'repeat' });
+    }
+
+    removeFutureRepeats(wordId) {
+        const preserved = this.queue.slice(0, this.position + 1);
+        const future = this.queue.slice(this.position + 1).filter(t => !(t.kind === 'repeat' && t.word_id === wordId));
+        this.queue = preserved.concat(future);
+    }
+
+    startRepeatWords() {
+        const prefixEnd = this.isComplete ? this.position : this.position + 1;
+        let currentRepeatId = null;
+        if (!this.isComplete && this.queue[this.position].kind === 'repeat') {
+            currentRepeatId = this.queue[this.position].word_id;
+        }
+
+        // Collect unique IDs pending repeat
+        const pendingTasks = this.queue.slice(prefixEnd).filter(t => t.kind === 'repeat');
+        const uniqueIds = [...new Set(pendingTasks.map(t => t.word_id))].filter(id => id !== currentRepeatId);
+        
+        // Also add failed words from session that aren't in queue yet? 
+        // For simplicity in web version, we stick to what's in the queue logic mostly.
+        
+        if (uniqueIds.length === 0) return false;
+
+        // Shuffle
+        for (let i = uniqueIds.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [uniqueIds[i], uniqueIds[j]] = [uniqueIds[j], uniqueIds[i]];
+        }
+
+        const futureBase = this.queue.slice(prefixEnd).filter(t => t.kind === 'base');
+        const newRepeats = uniqueIds.map(id => ({ word_id: id, kind: 'repeat' }));
+
+        this.queue = this.queue.slice(0, prefixEnd).concat(newRepeats).concat(futureBase);
+        this.saveState();
+        return true;
+    }
+
+    saveState() {
+        const state = {
+            correct: this.correct,
+            incorrect: this.incorrect,
+            baseCompleted: this.baseCompleted,
+            position: this.position,
+            sessionWordIds: this.sessionWordIds,
+            failures: this.failures,
+            queue: this.queue
+        };
+        localStorage.setItem('trainerState', JSON.stringify(state));
+    }
+
+    loadState() {
+        const raw = localStorage.getItem('trainerState');
+        if (!raw) {
+            this.reset();
+            return;
+        }
+        try {
+            const s = JSON.parse(raw);
+            this.correct = s.correct;
+            this.incorrect = s.incorrect;
+            this.baseCompleted = s.baseCompleted;
+            this.position = s.position;
+            this.sessionWordIds = s.sessionWordIds;
+            this.failures = s.failures;
+            this.queue = s.queue;
+        } catch (e) {
+            this.reset();
+        }
+    }
+}
+
+// --- UI CONTROLLER ---
+const model = new TrainerModel();
+let revealed = false;
+
+const ui = {
+    welcomeScreen: document.getElementById('welcome-screen'),
+    gameScreen: document.getElementById('game-screen'),
+    flashcard: document.getElementById('flashcard'),
+    cardTitle: document.getElementById('card-title'),
+    cardSubtitle: document.getElementById('card-subtitle'),
+    banner: document.getElementById('repeat-banner'),
+    
+    stats: {
+        correct: document.getElementById('stat-correct'),
+        incorrect: document.getElementById('stat-incorrect'),
+        accuracy: document.getElementById('stat-accuracy'),
+        progress: document.getElementById('stat-progress')
+    },
+    
+    buttons: {
+        known: document.getElementById('btn-known'),
+        unknown: document.getElementById('btn-unknown'),
+        repeat: document.getElementById('btn-repeat')
+    },
+
+    welcomeDesc: document.getElementById('welcome-desc'),
+    welcomeFooter: document.getElementById('welcome-footer')
+};
+
+function refreshUI() {
+    // Stats
+    ui.stats.correct.textContent = model.correct;
+    ui.stats.incorrect.textContent = model.incorrect;
+    ui.stats.accuracy.textContent = model.accuracy + '%';
+    ui.stats.progress.textContent = model.progressLabel;
+
+    // Banner
+    const repCount = model.repeatCount;
+    if (repCount > 0) {
+        ui.banner.style.display = 'block';
+        ui.banner.textContent = `Слов на повторение: ${repCount}`;
+    } else {
+        ui.banner.style.display = 'none';
+    }
+
+    // Buttons State
+    ui.buttons.repeat.disabled = !model.canRepeatWords;
+
+    if (model.isComplete) {
+        ui.flashcard.className = 'flashcard complete';
+        ui.cardTitle.textContent = "Тренировка завершена";
+        ui.cardSubtitle.textContent = "Нажмите «Сбросить прогресс», чтобы начать заново";
+        ui.buttons.known.disabled = true;
+        ui.buttons.unknown.disabled = true;
+    } else {
+        const word = model.currentWord();
+        if (word) {
+            ui.buttons.known.disabled = false;
+            ui.buttons.unknown.disabled = false;
+            
+            if (revealed) {
+                ui.flashcard.className = 'flashcard revealed';
+                ui.cardTitle.textContent = word.russian;
+                ui.cardSubtitle.textContent = "Вы знали это слово?";
+            } else {
+                ui.flashcard.className = 'flashcard';
+                ui.cardTitle.textContent = word.english;
+                ui.cardSubtitle.textContent = "Нажмите для перевода";
+            }
+        }
+    }
+}
+
+const app = {
+    startTraining: () => {
+        ui.welcomeScreen.style.display = 'none';
+        ui.gameScreen.style.display = 'block';
+        refreshUI();
+    },
+    
+    toggleCard: () => {
+        if (model.isComplete) return;
+        revealed = !revealed;
+        refreshUI();
+    },
+    
+    answer: (known) => {
+        if (model.isComplete) return;
+        model.answer(known);
+        revealed = false;
+        refreshUI();
+    },
+    
+    resetProgress: () => {
+        model.reset();
+        revealed = false;
+        // If we are in game screen, stay there. If welcome, update text.
+        if (ui.gameScreen.style.display === 'block') {
+            refreshUI();
+        } else {
+             updateWelcomeText();
+        }
+    },
+
+    repeatWords: () => {
+        if (model.startRepeatWords()) {
+            revealed = false;
+            refreshUI();
+        }
+    }
+};
+
+function updateWelcomeText() {
+    const hasProgress = model.totalAnswers > 0 && !model.isComplete;
+    ui.welcomeDesc.textContent = `При каждом сбросе приложение собирает новую сессию из ${model.totalWords} случайных слов из базы на ${model.vocabularySize} слов.`;
+    
+    if (hasProgress) {
+        ui.welcomeFooter.textContent = `Сохранён прогресс: ${model.progressLabel}, правильно ${model.correct}, неправильно ${model.incorrect}.`;
+    } else {
+        ui.welcomeFooter.textContent = "Новая случайная сессия уже подготовлена. Можно начинать.";
+    }
+}
+
+// Init
+updateWelcomeText();
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (ui.gameScreen.style.display === 'none') return;
+    
+    if (e.code === 'Space') {
+        app.toggleCard();
+    } else if (e.code === 'ArrowRight' || e.code === 'KeyK') {
+        app.answer(true);
+    } else if (e.code === 'ArrowLeft' || e.code === 'KeyU') {
+        app.answer(false);
+    } else if (e.code === 'F11') {
+        e.preventDefault();
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    }
+});
+
+</script>
+</body>
+</html>
